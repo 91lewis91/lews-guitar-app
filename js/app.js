@@ -61,11 +61,22 @@ function initServiceWorker() {
   }
 }
 
+function initModals() {
+  const modal = document.getElementById('chord-modal');
+  if (!modal) return;
+  modal.addEventListener('click', e => {
+    if (e.target === modal) closeChordModal();
+  });
+  const closeBtn = modal.querySelector('.chord-modal-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeChordModal);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initNav();
   initTunerUI();
   initTunerControls();
   initSongsView();
+  initModals();
   initServiceWorker();
   navigate('tuner');
 });

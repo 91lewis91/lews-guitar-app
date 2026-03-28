@@ -172,33 +172,95 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ---- Search results UI ----
+function renderSearchResults(results) {
+  const container = document.getElementById('search-results');
+  if (!container) return;
+  if (!results || results.length === 0) {
+    container.innerHTML = '<div class="search-no-results">No results found. Try a different search.</div>';
+    container.classList.remove('hidden');
+    return;
+  }
+  container.innerHTML = results.map(r => `
+    <div class="search-result-card" data-videoid="${escHtml(r.videoId)}">
+      <img class="sr-thumb" src="${escHtml(r.thumb)}" alt="" loading="lazy">
+      <div class="sr-info">
+        <div class="sr-title">${escHtml(r.title)}</div>
+        <div class="sr-author">${escHtml(r.author)}</div>
+      </div>
+      <button class="sr-add-btn" data-videoid="${escHtml(r.videoId)}" data-title="${escHtml(r.title)}" data-author="${escHtml(r.author)}">Add</button>
+    </div>`).join('');
+  container.classList.remove('hidden');
+
+  container.querySelectorAll('.sr-add-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.textContent = '...';
+      btn.disabled = true;
+      const url = `https://www.youtube.com/watch?v=${btn.dataset.videoid}`;
+      try {
+        await addSongFromUrl(url);
+        clearSearchResults();
+        renderSongList();
+      } catch (err) {
+        btn.textContent = 'Add';
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+function clearSearchResults() {
+  const container = document.getElementById('search-results');
+  if (container) { container.innerHTML = ''; container.classList.add('hidden'); }
+}
+
 // ---- Add song form ----
 function initSongsView() {
   const form = document.getElementById('add-song-form');
   const input = document.getElementById('song-url-input');
   const feedback = document.getElementById('add-song-feedback');
+  const submitBtn = form.querySelector('button');
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const url = input.value.trim();
-    if (!url) return;
+    const val = input.value.trim();
+    if (!val) return;
 
-    feedback.textContent = 'Fetching song info...';
-    feedback.className = 'form-feedback loading';
-    form.querySelector('button').disabled = true;
+    clearSearchResults();
+    feedback.textContent = '';
+    feedback.className = 'form-feedback';
+    submitBtn.disabled = true;
 
-    try {
-      const song = await addSongFromUrl(url);
-      input.value = '';
-      feedback.textContent = `"${song.title}" added!`;
-      feedback.className = 'form-feedback success';
-      renderSongList();
-    } catch (err) {
-      feedback.textContent = err.message;
-      feedback.className = 'form-feedback error';
-    } finally {
-      form.querySelector('button').disabled = false;
+    // Direct URL add
+    if (isYouTubeUrl(val) || isSpotifyUrl(val)) {
+      feedback.textContent = 'Fetching song info...';
+      feedback.className = 'form-feedback loading';
+      try {
+        const song = await addSongFromUrl(val);
+        input.value = '';
+        feedback.textContent = `"${song.title}" added!`;
+        feedback.className = 'form-feedback success';
+        renderSongList();
+      } catch (err) {
+        feedback.textContent = err.message;
+        feedback.className = 'form-feedback error';
+      }
+    } else {
+      // Search YouTube
+      feedback.textContent = 'Searching YouTube...';
+      feedback.className = 'form-feedback loading';
+      const results = await searchYouTube(val);
+      feedback.textContent = '';
+      feedback.className = 'form-feedback';
+      if (!results) {
+        feedback.textContent = 'Search failed — check your connection or paste a URL directly.';
+        feedback.className = 'form-feedback error';
+      } else {
+        renderSearchResults(results);
+      }
     }
+
+    submitBtn.disabled = false;
   });
 
   renderSongList();

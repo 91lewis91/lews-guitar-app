@@ -136,3 +136,43 @@ function findChords(query) {
     name.toLowerCase().includes(q.toLowerCase())
   ).slice(0, 10);
 }
+
+// Finger colours for chord diagrams (index=1, middle=2, ring=3, pinky=4)
+const FINGER_COLORS = {
+  1: '#4a9eff',  // blue  — index
+  2: '#2cb67d',  // green — middle
+  3: '#ff8c42',  // orange — ring
+  4: '#c47aff',  // purple — pinky
+};
+
+// Generate step-by-step human-readable instructions for a chord
+function generateChordInstructions(chordName) {
+  const chord = CHORDS[chordName];
+  if (!chord) return [];
+
+  const stringNames = ['Low E (thickest)', 'A', 'D', 'G', 'B', 'High e (thinnest)'];
+  const fingerLabels = { 1: '1st finger — index', 2: '2nd finger — middle', 3: '3rd finger — ring', 4: '4th finger — pinky' };
+  const lines = [];
+
+  if (chord.barre) {
+    lines.push({ type: 'barre', text: `Lay your 1st finger (index) flat across ALL strings at fret ${chord.barre.fret} — this is called a barre.` });
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const fret = chord.frets[i];
+    const finger = chord.fingers?.[i];
+    const str = stringNames[i];
+    // Skip strings fully covered by barre chord description
+    const isBarre = chord.barre && fret === chord.barre.fret && i >= chord.barre.fromString && i <= chord.barre.toString && !finger;
+    if (fret === -1) {
+      lines.push({ type: 'mute', text: `${str}: ✕  Don't play this string` });
+    } else if (fret === 0) {
+      lines.push({ type: 'open', text: `${str}: ○  Play open (no finger needed)` });
+    } else if (!isBarre) {
+      const fLabel = finger ? `${fingerLabels[finger]}` : 'press';
+      lines.push({ type: 'finger', finger, text: `${str}: fret ${fret}  —  ${fLabel}` });
+    }
+  }
+
+  return lines;
+}

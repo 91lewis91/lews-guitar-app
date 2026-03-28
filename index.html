@@ -69,12 +69,13 @@
         <h2>My Songs</h2>
         <form id="add-song-form">
           <div class="url-input-row">
-            <input type="url" id="song-url-input"
-              placeholder="Paste YouTube or Spotify URL..."
+            <input type="text" id="song-url-input"
+              placeholder="Search for a song or paste YouTube URL..."
               autocomplete="off" autocorrect="off" autocapitalize="off">
-            <button type="submit">Add</button>
+            <button type="submit">Search / Add</button>
           </div>
           <div id="add-song-feedback" class="form-feedback"></div>
+          <div id="search-results" class="search-results hidden"></div>
         </form>
       </div>
       <div id="song-list"></div>
@@ -85,6 +86,14 @@
       <!-- Populated dynamically by teacher.js -->
       <div style="padding:32px 16px; color: var(--text-secondary); text-align:center;">
         Select a song from <strong>Songs</strong> to start learning.
+      </div>
+    </div>
+
+    <!-- Chord modal -->
+    <div id="chord-modal" class="chord-modal hidden" role="dialog">
+      <div class="chord-modal-box">
+        <button class="chord-modal-close" aria-label="Close">✕</button>
+        <div id="chord-modal-content" class="chord-modal-content"></div>
       </div>
     </div>
 
@@ -116,6 +125,7 @@
 
   </div>
 
+  <script src="js/youtube-search.js"></script>
   <script src="js/chords.js"></script>
   <script src="js/fetch-chords.js"></script>
   <script src="js/tuner.js"></script>

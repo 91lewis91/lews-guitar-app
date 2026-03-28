@@ -1,82 +1,77 @@
 // Teacher — chord diagrams, tab display, learn view
 
 // ---- Chord diagram SVG renderer ----
-function renderChordDiagram(chordName) {
+function renderChordDiagram(chordName, opts = {}) {
   const chord = CHORDS[chordName];
   if (!chord) return '';
 
-  const W = 120, H = 140;
-  const padLeft = 18, padTop = 30, padRight = 10;
-  const stringSpacing = 16;
-  const fretSpacing = 18;
-  const numStrings = 6;
-  const numFrets = 4;
-  const dotR = 6;
+  const large = opts.large || false;
+  const colorFingers = opts.colorFingers !== false; // default true
 
-  // Determine fret window
-  const minFret = Math.min(...chord.frets.filter(f => f > 0));
+  const W = large ? 220 : 120;
+  const H = large ? 265 : 140;
+  const padLeft = large ? 28 : 18;
+  const padTop  = large ? 42 : 30;
+  const stringSpacing = large ? 30 : 16;
+  const fretSpacing   = large ? 32 : 18;
+  const dotR          = large ? 11 : 6;
+  const numStrings    = 6;
+  const numFrets      = 4;
+  const labelSize     = large ? 20 : 14;
+  const oxSize        = large ? 16 : 12;
+  const fingerSize    = large ? 12 : 9;
+
+  const minFret  = Math.min(...chord.frets.filter(f => f > 0));
   const startFret = (chord.barre?.fret) || (minFret > 0 ? minFret : 1);
-  const showNut = startFret === 1;
+  const showNut   = startFret === 1;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" class="chord-svg">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" class="chord-svg${large ? ' chord-svg-large' : ''}">`;
 
-  // Chord name label
-  svg += `<text x="${padLeft + (numStrings-1)*stringSpacing/2}" y="18" text-anchor="middle" class="chord-label">${escHtml(chordName)}</text>`;
+  svg += `<text x="${padLeft + (numStrings-1)*stringSpacing/2}" y="${large ? 26 : 18}" text-anchor="middle" class="chord-label" style="font-size:${labelSize}px">${escHtml(chordName)}</text>`;
 
-  // Nut or fret position indicator
   if (showNut) {
-    svg += `<line x1="${padLeft}" y1="${padTop}" x2="${padLeft + (numStrings-1)*stringSpacing}" y2="${padTop}" stroke="var(--text)" stroke-width="4"/>`;
+    svg += `<line x1="${padLeft}" y1="${padTop}" x2="${padLeft + (numStrings-1)*stringSpacing}" y2="${padTop}" stroke="var(--text)" stroke-width="${large ? 5 : 4}"/>`;
   } else {
-    svg += `<text x="${padLeft + (numStrings-1)*stringSpacing + 6}" y="${padTop + fretSpacing/2}" class="fret-num">${startFret}fr</text>`;
+    svg += `<text x="${padLeft + (numStrings-1)*stringSpacing + (large ? 8 : 6)}" y="${padTop + fretSpacing/2}" class="fret-num" style="font-size:${large ? 13 : 10}px">${startFret}fr</text>`;
   }
 
-  // Fret lines
   for (let f = 0; f <= numFrets; f++) {
     const y = padTop + f * fretSpacing;
-    const w = (f === 0 && showNut) ? 1 : 1;
-    svg += `<line x1="${padLeft}" y1="${y}" x2="${padLeft + (numStrings-1)*stringSpacing}" y2="${y}" stroke="var(--surface3)" stroke-width="${w}"/>`;
+    svg += `<line x1="${padLeft}" y1="${y}" x2="${padLeft + (numStrings-1)*stringSpacing}" y2="${y}" stroke="var(--surface3)" stroke-width="1"/>`;
   }
-
-  // String lines
   for (let s = 0; s < numStrings; s++) {
     const x = padLeft + s * stringSpacing;
-    svg += `<line x1="${x}" y1="${padTop}" x2="${x}" y2="${padTop + numFrets * fretSpacing}" stroke="var(--surface3)" stroke-width="1"/>`;
+    svg += `<line x1="${x}" y1="${padTop}" x2="${x}" y2="${padTop + numFrets * fretSpacing}" stroke="var(--surface3)" stroke-width="${large ? 1.5 : 1}"/>`;
   }
 
-  // Barre bar
   if (chord.barre) {
     const b = chord.barre;
     const fretPos = b.fret - startFret;
-    const y = padTop + fretPos * fretSpacing - fretSpacing / 2;
+    const y  = padTop + fretPos * fretSpacing - fretSpacing / 2;
     const x1 = padLeft + b.fromString * stringSpacing;
-    const x2 = padLeft + b.toString * stringSpacing;
-    svg += `<rect x="${x1 - dotR}" y="${y - dotR + 1}" width="${x2 - x1 + 2*dotR}" height="${dotR*2}" rx="${dotR}" fill="var(--accent)" opacity="0.85"/>`;
+    const x2 = padLeft + b.toString  * stringSpacing;
+    const barColor = colorFingers ? FINGER_COLORS[1] : 'var(--accent)';
+    svg += `<rect x="${x1 - dotR}" y="${y - dotR + 1}" width="${x2 - x1 + 2*dotR}" height="${dotR*2}" rx="${dotR}" fill="${barColor}" opacity="0.9"/>`;
   }
 
-  // Finger dots + O/X markers
   for (let s = 0; s < numStrings; s++) {
-    const x = padLeft + s * stringSpacing;
+    const x    = padLeft + s * stringSpacing;
     const fret = chord.frets[s];
+    const finger = chord.fingers?.[s];
 
     if (fret === -1) {
-      // Muted
-      svg += `<text x="${x}" y="${padTop - 8}" text-anchor="middle" class="ox-label muted">✕</text>`;
+      svg += `<text x="${x}" y="${padTop - (large ? 12 : 8)}" text-anchor="middle" class="ox-label muted" style="font-size:${oxSize}px">✕</text>`;
     } else if (fret === 0) {
-      // Open
-      svg += `<circle cx="${x}" cy="${padTop - 9}" r="5" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"/>`;
+      svg += `<circle cx="${x}" cy="${padTop - (large ? 12 : 9)}" r="${large ? 7 : 5}" fill="none" stroke="var(--text-secondary)" stroke-width="${large ? 2 : 1.5}"/>`;
     } else {
-      // Finger dot
       const fretPos = fret - startFret;
       const y = padTop + fretPos * fretSpacing - fretSpacing / 2;
-      // Skip if already covered by barre
-      const isBarre = chord.barre &&
-        fret === chord.barre.fret &&
-        s >= chord.barre.fromString &&
-        s <= chord.barre.toString;
+      const isBarre = chord.barre && fret === chord.barre.fret && s >= chord.barre.fromString && s <= chord.barre.toString;
       if (!isBarre) {
-        svg += `<circle cx="${x}" cy="${y}" r="${dotR}" fill="var(--accent)"/>`;
-        if (chord.fingers && chord.fingers[s]) {
-          svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" class="finger-num">${chord.fingers[s]}</text>`;
+        const dotColor = (colorFingers && finger && FINGER_COLORS[finger]) ? FINGER_COLORS[finger] : 'var(--accent)';
+        svg += `<circle cx="${x}" cy="${y}" r="${dotR}" fill="${dotColor}"/>`;
+        if (finger) {
+          svg += `<text x="${x}" y="${y + fingerSize/2 + 1}" text-anchor="middle" class="finger-num" style="font-size:${fingerSize}px">${finger}</text>`;
         }
       }
     }
@@ -339,6 +334,48 @@ function removeChordFromSong(chordName) {
   renderChordDiagrams({ ...song, chords });
 }
 
+function openChordModal(chordName) {
+  const modal = document.getElementById('chord-modal');
+  const content = document.getElementById('chord-modal-content');
+  if (!modal || !content) return;
+
+  const chord = CHORDS[chordName];
+  const instructions = generateChordInstructions(chordName);
+  const fingerColors = FINGER_COLORS;
+
+  const instructionHtml = instructions.map(line => {
+    let icon = '';
+    if (line.type === 'mute')   icon = `<span class="ci-icon ci-mute">✕</span>`;
+    else if (line.type === 'open') icon = `<span class="ci-icon ci-open">○</span>`;
+    else if (line.type === 'barre') icon = `<span class="ci-icon ci-barre" style="background:${fingerColors[1]}">B</span>`;
+    else if (line.type === 'finger') icon = `<span class="ci-icon ci-finger" style="background:${fingerColors[line.finger] || '#888'}">${line.finger}</span>`;
+    return `<div class="ci-row">${icon}<span class="ci-text">${escHtml(line.text)}</span></div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="cm-chord-name">${escHtml(chordName)}</div>
+    <div class="cm-chord-full">${chord ? escHtml(chord.full) : ''}</div>
+    <div class="cm-diagram">${renderChordDiagram(chordName, { large: true, colorFingers: true })}</div>
+    <div class="cm-legend">
+      <div class="cm-legend-title">Finger guide</div>
+      ${[1,2,3,4].map(f => `<div class="cm-legend-row"><span class="cm-legend-dot" style="background:${fingerColors[f]}"></span>${['Index','Middle','Ring','Pinky'][f-1]} finger</div>`).join('')}
+    </div>
+    <div class="cm-instructions">
+      <div class="cm-instructions-title">Step by step</div>
+      ${instructionHtml}
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChordModal() {
+  const modal = document.getElementById('chord-modal');
+  if (modal) modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
 function renderChordDiagrams(song) {
   const container = document.getElementById('chord-diagrams');
   if (!container) return;
@@ -351,13 +388,21 @@ function renderChordDiagrams(song) {
   container.innerHTML = song.chords.map(name => {
     const known = !!CHORDS[name];
     return `
-      <div class="chord-diagram-card">
+      <div class="chord-diagram-card" data-chord="${escHtml(name)}" style="cursor:pointer">
         ${known ? renderChordDiagram(name) : `<div class="chord-unknown">${escHtml(name)}</div>`}
+        <div class="chord-tap-hint">tap to learn</div>
         <button class="chord-remove" data-chord="${escHtml(name)}">✕</button>
       </div>`;
   }).join('');
 
   container.querySelectorAll('.chord-remove').forEach(btn => {
     btn.addEventListener('click', () => removeChordFromSong(btn.dataset.chord));
+  });
+
+  container.querySelectorAll('.chord-diagram-card[data-chord]').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('chord-remove')) return;
+      openChordModal(card.dataset.chord);
+    });
   });
 }

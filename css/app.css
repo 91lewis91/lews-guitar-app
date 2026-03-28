@@ -686,6 +686,7 @@ body {
   background: var(--surface2);
   border-radius: var(--radius);
   padding: 8px 8px 4px;
+  cursor: pointer;
 }
 .chord-remove {
   position: absolute;
@@ -866,6 +867,209 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .save-btn:active { opacity: 0.8; }
+
+/* ==============================
+   YOUTUBE SEARCH RESULTS
+   ============================== */
+.search-results {
+  border-top: 1px solid var(--surface2);
+  background: var(--bg);
+}
+.search-result-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--surface2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-result-card:active { background: var(--surface2); }
+.sr-thumb {
+  width: 80px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--surface2);
+}
+.sr-info { flex: 1; min-width: 0; }
+.sr-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sr-author {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.sr-add-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.sr-add-btn:disabled { opacity: 0.5; }
+.search-no-results {
+  padding: 20px 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ==============================
+   CHORD MODAL
+   ============================== */
+.chord-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.chord-modal.hidden { display: none; }
+.chord-modal-box {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 20px 20px 40px;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+.chord-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--surface2);
+  border: none;
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.chord-modal-content { padding-top: 8px; }
+.cm-chord-name {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-align: center;
+  color: var(--accent);
+}
+.cm-chord-full {
+  font-size: 15px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.cm-diagram {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.chord-svg-large { width: 220px; height: 265px; display: block; }
+
+/* Finger legend */
+.cm-legend {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cm-legend-title {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.cm-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.cm-legend-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Step-by-step instructions */
+.cm-instructions { }
+.cm-instructions-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.ci-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--surface2);
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.ci-row:last-child { border-bottom: none; }
+.ci-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+.ci-mute   { background: var(--danger); font-size: 11px; }
+.ci-open   { background: none; border: 2px solid var(--text-secondary); color: var(--text-secondary); }
+.ci-barre  { }
+.ci-finger { }
+
+/* Tap hint on chord cards */
+.chord-tap-hint {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2px 0 4px;
+  letter-spacing: 0.03em;
+}
 
 /* ==============================
    Desktop tweak
