@@ -78,6 +78,12 @@ const CHORDS = {
     label: 'B7', full: 'B dominant 7'
   },
   // ---- Barre chords ----
+  'Bb': {
+    frets:   [1, 3, 3, 3, 3, 1],
+    fingers: [1, 3, 3, 3, 3, 1],
+    barre:   { fret: 1, fromString: 0, toString: 5 },
+    label: 'Bb', full: 'B flat major'
+  },
   'F': {
     frets:   [1, 3, 3, 2, 1, 1],
     fingers: [1, 3, 4, 2, 1, 1],
