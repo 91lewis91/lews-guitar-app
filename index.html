@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Guitar</title>
+  <title>Lew's Guitar</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/app.css">
 </head>
@@ -16,8 +16,8 @@
     <!-- ===== TUNER VIEW ===== -->
     <div id="view-tuner" class="view">
 
-      <div class="tuner-header">
-        <span class="tuner-header-title">&#9834; Tuner</span>
+      <div class="app-topbar">
+        <span class="app-name">Lew's Guitar</span>
         <span id="tuner-status" class="tuner-status"></span>
       </div>
 
@@ -38,14 +38,10 @@
       <div class="tuner-section">
         <div class="tuner-section-label">③ Follow the instruction</div>
 
-        <!-- Big action word -->
         <div id="tuner-action" class="tuner-action idle">Pluck the string...</div>
-
-        <!-- Detected note -->
         <div id="tuner-detected-note" class="tuner-detected-note">—</div>
         <div id="tuner-cents-val" class="tuner-cents-val"></div>
 
-        <!-- Horizontal bar meter -->
         <div class="tuner-bar-wrap">
           <span class="bar-label-left">FLAT</span>
           <div id="tuner-bar-track" class="tuner-bar-track">
@@ -56,19 +52,21 @@
         </div>
       </div>
 
-      <!-- How to tighten/loosen -->
       <div class="tuner-tip-box">
         <div class="tip-row"><span class="tip-icon tighten-icon">↑</span><div><strong>Tighten</strong> = turn the peg to increase string tension = raises the pitch</div></div>
         <div class="tip-row"><span class="tip-icon loosen-icon">↓</span><div><strong>Loosen</strong> = turn the peg to decrease string tension = lowers the pitch</div></div>
-        <div class="tip-row"><span class="tip-icon">💡</span><div>Turn slowly — a tiny movement makes a big difference</div></div>
+        <div class="tip-row"><span class="tip-icon">!</span><div>Turn slowly — a tiny movement makes a big difference</div></div>
       </div>
 
     </div>
 
     <!-- ===== SONGS VIEW ===== -->
     <div id="view-songs" class="view hidden">
+      <div class="app-topbar">
+        <span class="app-name">Lew's Guitar</span>
+      </div>
       <div class="songs-add-area">
-        <h2>&#9834; <span>My Songs</span></h2>
+        <h2>My Songs</h2>
         <form id="add-song-form">
           <div class="url-input-row">
             <input type="url" id="song-url-input"
@@ -93,15 +91,25 @@
     <!-- ===== BOTTOM NAV ===== -->
     <nav class="bottom-nav">
       <button class="nav-btn active" data-view="tuner">
-        <span class="nav-icon">🎸</span>
-        Tuner
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="2"/>
+          <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+        </svg>
+        Tune
       </button>
       <button class="nav-btn" data-view="songs">
-        <span class="nav-icon">♪</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
         Songs
       </button>
       <button class="nav-btn" data-view="learn">
-        <span class="nav-icon">📖</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
         Learn
       </button>
     </nav>

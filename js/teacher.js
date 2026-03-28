@@ -154,16 +154,25 @@ function renderLearnView(song) {
     </div>
 
     <div class="learn-tab-content hidden" id="learn-tab-tabs">
-      <div class="tabs-toolbar">
+
+      <div class="ug-how-to">
+        <div class="ug-how-to-title">How to get tabs</div>
+        <div class="ug-step"><span class="ug-step-num">1</span>Tap the button below — it searches Ultimate Guitar for this song</div>
+        <div class="ug-step"><span class="ug-step-num">2</span>If it asks you to install an app — tap <strong>Not now</strong> or <strong>Continue in browser</strong></div>
+        <div class="ug-step"><span class="ug-step-num">3</span>Pick a result — <strong>Chords</strong> versions are easiest for beginners</div>
+        <div class="ug-step"><span class="ug-step-num">4</span>Tap and hold anywhere on the tab text → <strong>Select all</strong> → <strong>Copy</strong></div>
+        <div class="ug-step"><span class="ug-step-num">5</span>Come back here and paste into the box below</div>
         <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(song.title + ' ' + song.artist)}"
-           target="_blank" class="ug-link">Find on Ultimate Guitar ↗</a>
-        <div class="scroll-controls">
-          <label>Auto-scroll</label>
-          <input type="range" id="scroll-speed" min="5" max="100" value="40">
-          <button id="scroll-toggle" class="scroll-btn">▶ Scroll</button>
-        </div>
+           target="_blank" class="ug-search-btn">Search Ultimate Guitar for "${escHtml(song.title)}" ↗</a>
       </div>
-      <textarea id="tab-editor" class="tab-editor" placeholder="Paste guitar tabs here from Ultimate Guitar or similar...&#10;&#10;Example:&#10;e|---0---2---3---|&#10;B|---1---3---3---|&#10;G|---0---2---0---|&#10;D|---2---0---0---|&#10;A|---3---x---2---|&#10;E|---x---x---3---|">${escHtml(song.tabs)}</textarea>
+
+      <div class="scroll-controls">
+        <span class="scroll-label">Auto-scroll speed</span>
+        <input type="range" id="scroll-speed" min="5" max="100" value="40">
+        <button id="scroll-toggle" class="scroll-btn">Play</button>
+      </div>
+
+      <textarea id="tab-editor" class="tab-editor" placeholder="Paste tab text here after copying from Ultimate Guitar...&#10;&#10;Example of what tabs look like:&#10;&#10;e|---0---2---3---|&#10;B|---1---3---3---|&#10;G|---0---2---0---|&#10;D|---2---0---0---|&#10;A|---3---x---2---|&#10;E|---x---x---3---|&#10;&#10;Numbers = which fret to press&#10;0 = play the string open (no fret)&#10;x = don't play that string">${escHtml(song.tabs)}</textarea>
     </div>
 
     <div class="learn-tab-content hidden" id="learn-tab-notes">
