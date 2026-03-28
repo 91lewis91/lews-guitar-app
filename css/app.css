@@ -556,6 +556,63 @@ body {
 
 .learn-tab-content { padding: 16px; }
 
+/* Auto-fetch */
+.auto-fetch-row {
+  margin-bottom: 4px;
+}
+.auto-fetch-btn {
+  width: 100%;
+  background: var(--surface3);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.auto-fetch-btn:active:not(:disabled) { background: var(--surface2); }
+.auto-fetch-btn:disabled { opacity: 0.6; cursor: default; }
+.af-icon { font-size: 18px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.af-spin { display: inline-block; animation: spin 0.8s linear infinite; font-size: 18px; }
+
+.auto-fetch-status {
+  font-size: 13px;
+  padding: 6px 2px 0;
+  min-height: 20px;
+}
+.auto-fetch-status.ok   { color: var(--in-tune); }
+.auto-fetch-status.fail { color: var(--text-secondary); }
+
+.chord-divider {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--surface3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 12px 0 6px;
+  position: relative;
+}
+.chord-divider::before,
+.chord-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: var(--surface2);
+}
+.chord-divider::before { left: 0; }
+.chord-divider::after  { right: 0; }
+
 /* Chord manager */
 .chord-search-row {
   position: relative;
