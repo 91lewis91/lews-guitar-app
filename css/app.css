@@ -199,18 +199,31 @@ body {
 
 /* Big action word */
 .tuner-action {
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 900;
   text-align: center;
   letter-spacing: -1px;
   line-height: 1;
-  padding: 8px 0 4px;
-  transition: color 0.1s;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  transition: color 0.15s, background 0.2s;
 }
-.tuner-action.idle     { color: var(--text-secondary); font-size: 22px; font-weight: 500; }
-.tuner-action.in-tune  { color: var(--in-tune); }
-.tuner-action.tighten  { color: #ff8c42; }
-.tuner-action.loosen   { color: #74b3ff; }
+.tuner-action.idle    { color: var(--text-secondary); font-size: 20px; font-weight: 500; background: none; }
+.tuner-action.tighten { color: #ff8c42; background: none; }
+.tuner-action.loosen  { color: #74b3ff; background: none; }
+
+/* In-tune: prominent green block with pulse */
+@keyframes in-tune-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(44,182,125,0.6); }
+  60%  { box-shadow: 0 0 0 18px rgba(44,182,125,0); }
+  100% { box-shadow: 0 0 0 0 rgba(44,182,125,0); }
+}
+.tuner-action.in-tune {
+  color: #fff;
+  background: var(--in-tune);
+  border-radius: var(--radius);
+  animation: in-tune-pulse 0.9s ease-out 2;
+}
 
 /* Detected note */
 .tuner-detected-note {
