@@ -1,5 +1,5 @@
 // Service worker — cache app shell for offline use
-const CACHE = 'guitar-app-v1';
+const CACHE = 'guitar-app-v3';
 const ASSETS = [
   '/',
   '/index.html',

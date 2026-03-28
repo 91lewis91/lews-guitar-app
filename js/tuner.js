@@ -1,4 +1,4 @@
-// Tuner — Web Audio API pitch detection via autocorrelation
+// Tuner — Web Audio API pitch detection with smoothing and stability filtering
 
 const GUITAR_NOTES = [
   { name: 'E2', note: 'E', freq: 82.41,  string: 6, label: 'E', hint: 'thickest' },
@@ -11,67 +11,79 @@ const GUITAR_NOTES = [
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
+// ---- Tuning parameters ----
+const RMS_THRESHOLD    = 0.018;  // ignore very quiet sounds / background noise
+const MEDIAN_BUF_SIZE  = 12;     // readings to buffer for median filter
+const STABLE_FRAMES    = 10;     // frames in same direction before showing instruction
+const IN_TUNE_CENTS    = 8;      // ±cents considered "in tune"
+const FREQ_RANGE_CENTS = 700;    // only accept readings within ±7 semitones of target
+const DISPLAY_MS       = 110;    // minimum ms between display updates
+
 // ---- State ----
-let audioCtx = null;
-let analyser = null;
-let micStream = null;
-let tunerActive = false;
-let tunerRAF = null;
-let selectedString = 6; // default to low E
-let smoothedFreq = -1;
-const SMOOTH_ALPHA = 0.12; // Lower = smoother but slower to respond
+let audioCtx = null, analyser = null, micStream = null;
+let tunerActive = false, tunerRAF = null;
+let selectedString = 6;
 
-// Convert frequency to MIDI + cents
-function freqToNote(freq) {
-  if (freq <= 0) return null;
-  const midi = 12 * Math.log2(freq / 440) + 69;
-  const midiRounded = Math.round(midi);
-  const cents = Math.round((midi - midiRounded) * 100);
-  const noteName = NOTE_NAMES[((midiRounded % 12) + 12) % 12];
-  const octave = Math.floor(midiRounded / 12) - 1;
-  return { noteName, octave, cents, midi };
-}
+let freqBuffer     = [];   // circular buffer of recent valid readings
+let stableCount    = 0;    // frames consecutively pointing same direction
+let lastDirection  = null; // 'flat' | 'sharp' | 'in-tune' | null
+let lastDisplayAt  = 0;
 
-// Cents deviation from a target frequency
+// ---- Maths helpers ----
 function centsFromTarget(detected, target) {
   return Math.round(1200 * Math.log2(detected / target));
 }
 
-// Autocorrelation pitch detection
+function median(arr) {
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function freqToNoteName(freq) {
+  const midi = 12 * Math.log2(freq / 440) + 69;
+  const name = NOTE_NAMES[((Math.round(midi) % 12) + 12) % 12];
+  const oct  = Math.floor(Math.round(midi) / 12) - 1;
+  return name + oct;
+}
+
+// ---- Autocorrelation pitch detection ----
 function autoCorrelate(buf, sampleRate) {
   const SIZE = buf.length;
+
+  // RMS — reject quiet signal
   let rms = 0;
   for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.01) return -1;
+  if (Math.sqrt(rms / SIZE) < RMS_THRESHOLD) return -1;
 
+  // Trim silence edges
   let r1 = 0, r2 = SIZE - 1;
-  const thres = 0.2;
   for (let i = 0; i < SIZE / 2; i++) {
-    if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+    if (Math.abs(buf[i]) >= 0.2)   { r1 = i; break; }
   }
   for (let i = 1; i < SIZE / 2; i++) {
-    if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+    if (Math.abs(buf[SIZE - i]) >= 0.2) { r2 = SIZE - i; break; }
   }
-  const trimmed = buf.slice(r1, r2);
-  const N = trimmed.length;
+  const t = buf.slice(r1, r2);
+  const N = t.length;
+  if (N < 64) return -1;
 
+  // Autocorrelation
   const c = new Float32Array(N);
   for (let lag = 0; lag < N; lag++) {
-    for (let j = 0; j < N - lag; j++) {
-      c[lag] += trimmed[j] * trimmed[j + lag];
-    }
+    for (let j = 0; j < N - lag; j++) c[lag] += t[j] * t[j + lag];
   }
 
+  // First trough then highest peak
   let d = 0;
   while (d < N - 1 && c[d] > c[d + 1]) d++;
-
   let maxVal = -Infinity, maxPos = -1;
   for (let i = d; i < N; i++) {
     if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; }
   }
   if (maxPos < 1 || maxPos >= N - 1) return -1;
 
+  // Parabolic interpolation
   const x1 = c[maxPos - 1], x2 = c[maxPos], x3 = c[maxPos + 1];
   const a = (x1 + x3 - 2 * x2) / 2;
   const b = (x3 - x1) / 2;
@@ -82,102 +94,143 @@ function autoCorrelate(buf, sampleRate) {
 // ---- Audio loop ----
 function tunerLoop() {
   if (!tunerActive) return;
+
   const buf = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buf);
   const rawFreq = autoCorrelate(buf, audioCtx.sampleRate);
 
-  if (rawFreq > 0) {
-    // Exponential moving average smoothing
-    if (smoothedFreq < 0) smoothedFreq = rawFreq;
-    else smoothedFreq = SMOOTH_ALPHA * rawFreq + (1 - SMOOTH_ALPHA) * smoothedFreq;
-    updateTunerDisplay(smoothedFreq);
+  const target = GUITAR_NOTES.find(s => s.string === selectedString);
+
+  if (rawFreq > 0 && target) {
+    // Only accept if within ±7 semitones of target (filters noise & wrong strings)
+    const centsOff = centsFromTarget(rawFreq, target.freq);
+    if (Math.abs(centsOff) <= FREQ_RANGE_CENTS) {
+      freqBuffer.push(rawFreq);
+      if (freqBuffer.length > MEDIAN_BUF_SIZE) freqBuffer.shift();
+    }
+    // else: reading too far off — ignore it
   } else {
-    // Silence — decay back to idle slowly
-    smoothedFreq = -1;
-    updateTunerDisplay(-1);
+    // No signal — slowly drain buffer
+    if (freqBuffer.length > 0) freqBuffer.shift();
+  }
+
+  // Throttle display updates
+  const now = performance.now();
+  if (now - lastDisplayAt >= DISPLAY_MS) {
+    lastDisplayAt = now;
+    updateTunerDisplay();
   }
 
   tunerRAF = requestAnimationFrame(tunerLoop);
 }
 
-// ---- Display ----
-function updateTunerDisplay(freq) {
-  const target = GUITAR_NOTES.find(s => s.string === selectedString);
-  const barEl    = document.getElementById('tuner-bar-fill');
-  const actionEl = document.getElementById('tuner-action');
-  const noteEl   = document.getElementById('tuner-detected-note');
-  const centsEl  = document.getElementById('tuner-cents-val');
-  const barTrack = document.getElementById('tuner-bar-track');
+function updateTunerDisplay() {
+  const barFill    = document.getElementById('tuner-bar-fill');
+  const barTrack   = document.getElementById('tuner-bar-track');
+  const actionEl   = document.getElementById('tuner-action');
+  const noteEl     = document.getElementById('tuner-detected-note');
+  const centsEl    = document.getElementById('tuner-cents-val');
 
-  if (freq < 0 || !target) {
-    if (barEl) barEl.style.left = '50%';
+  const target = GUITAR_NOTES.find(s => s.string === selectedString);
+
+  if (freqBuffer.length < 3 || !target) {
+    // Not enough signal yet
     if (actionEl) { actionEl.textContent = 'Pluck the string...'; actionEl.className = 'tuner-action idle'; }
-    if (noteEl) noteEl.textContent = '—';
-    if (centsEl) centsEl.textContent = '';
-    if (barTrack) barTrack.className = 'tuner-bar-track';
+    if (noteEl)   noteEl.textContent = '—';
+    if (centsEl)  centsEl.textContent = '';
+    setBar(0, '');
+    stableCount = 0; lastDirection = null;
     return;
   }
 
-  const cents = centsFromTarget(freq, target.freq);
-  const clamped = Math.max(-60, Math.min(60, cents));
-  // Bar position: 50% = centre, range maps to 5%–95%
-  const pct = 50 + (clamped / 60) * 45;
+  // Use median of buffer — much more stable than latest reading
+  const stableFreq = median(freqBuffer);
+  const cents      = centsFromTarget(stableFreq, target.freq);
+  const clamped    = Math.max(-60, Math.min(60, cents));
+  const pct        = 50 + (clamped / 60) * 45;
 
-  const note = freqToNote(freq);
-  if (noteEl && note) noteEl.textContent = note.noteName + note.octave;
+  // Update note name + cents readout
+  if (noteEl) noteEl.textContent = freqToNoteName(stableFreq);
   if (centsEl) {
-    if (Math.abs(cents) <= 5) centsEl.textContent = '';
+    if (Math.abs(cents) <= IN_TUNE_CENTS) centsEl.textContent = '';
     else centsEl.textContent = Math.abs(cents) + ' cents ' + (cents < 0 ? 'flat' : 'sharp');
   }
+  if (barFill) barFill.style.left = pct + '%';
 
-  if (barEl) barEl.style.left = pct + '%';
+  // Determine direction
+  const dir = Math.abs(cents) <= IN_TUNE_CENTS ? 'in-tune' : cents < 0 ? 'flat' : 'sharp';
 
-  const abs = Math.abs(cents);
-  if (abs <= 5) {
-    if (actionEl) { actionEl.textContent = '✓  In tune!'; actionEl.className = 'tuner-action in-tune'; }
-    if (barTrack) barTrack.className = 'tuner-bar-track in-tune';
-  } else if (cents < 0) {
-    // Flat = note is too low = tighten the string
-    if (actionEl) { actionEl.innerHTML = '&#8593; Tighten'; actionEl.className = 'tuner-action tighten'; }
-    if (barTrack) barTrack.className = 'tuner-bar-track flat';
+  // Stability: only commit to showing a direction after N consistent frames
+  if (dir === lastDirection) {
+    stableCount = Math.min(stableCount + 1, STABLE_FRAMES + 5);
   } else {
-    // Sharp = note is too high = loosen the string
-    if (actionEl) { actionEl.innerHTML = '&#8595; Loosen'; actionEl.className = 'tuner-action loosen'; }
-    if (barTrack) barTrack.className = 'tuner-bar-track sharp';
+    stableCount = 0;
+    lastDirection = dir;
   }
+
+  if (stableCount < STABLE_FRAMES) {
+    // Still detecting — don't show instruction yet
+    if (actionEl) { actionEl.textContent = 'Detecting...'; actionEl.className = 'tuner-action idle'; }
+    setBar(pct, '');
+    return;
+  }
+
+  // Stable — show the instruction
+  if (dir === 'in-tune') {
+    if (actionEl) { actionEl.textContent = '✓  In tune!'; actionEl.className = 'tuner-action in-tune'; }
+    setBar(pct, 'in-tune');
+  } else if (dir === 'flat') {
+    if (actionEl) { actionEl.innerHTML = '&#8593; Tighten'; actionEl.className = 'tuner-action tighten'; }
+    setBar(pct, 'flat');
+  } else {
+    if (actionEl) { actionEl.innerHTML = '&#8595; Loosen'; actionEl.className = 'tuner-action loosen'; }
+    setBar(pct, 'sharp');
+  }
+}
+
+function setBar(pct, state) {
+  const fill  = document.getElementById('tuner-bar-fill');
+  const track = document.getElementById('tuner-bar-track');
+  if (fill)  fill.style.left = (pct || 50) + '%';
+  if (track) track.className = 'tuner-bar-track' + (state ? ' ' + state : '');
 }
 
 // ---- String selector ----
 function selectString(stringNum) {
   selectedString = stringNum;
-  smoothedFreq = -1;
+  freqBuffer = [];
+  stableCount = 0;
+  lastDirection = null;
+
   document.querySelectorAll('.str-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.string) === stringNum);
   });
+
   const target = GUITAR_NOTES.find(s => s.string === stringNum);
-  const targetEl = document.getElementById('tuner-target-note');
-  if (targetEl && target) targetEl.textContent = 'Tuning to: ' + target.name + ' (' + Math.round(target.freq) + ' Hz)';
-  updateTunerDisplay(-1);
+  const el = document.getElementById('tuner-target-note');
+  if (el && target) el.textContent = 'Tuning to: ' + target.name + ' (' + Math.round(target.freq) + ' Hz)';
+
+  updateTunerDisplay();
 }
 
 // ---- Start / Stop ----
 async function startTuner() {
   if (tunerActive) return;
   try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false });
     const source = audioCtx.createMediaStreamSource(micStream);
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
     tunerActive = true;
-    smoothedFreq = -1;
-    const statusEl = document.getElementById('tuner-status');
-    if (statusEl) { statusEl.textContent = 'Listening...'; statusEl.className = 'tuner-status active'; }
+    freqBuffer = []; stableCount = 0; lastDirection = null;
+    const s = document.getElementById('tuner-status');
+    if (s) { s.textContent = 'Listening'; s.className = 'tuner-status active'; }
     tunerLoop();
-  } catch (err) {
-    const statusEl = document.getElementById('tuner-status');
-    if (statusEl) { statusEl.textContent = 'Microphone access denied — check browser permissions.'; statusEl.className = 'tuner-status error'; }
+  } catch {
+    const s = document.getElementById('tuner-status');
+    if (s) { s.textContent = 'Mic access denied'; s.className = 'tuner-status error'; }
   }
 }
 
@@ -186,28 +239,25 @@ function stopTuner() {
   tunerActive = false;
   cancelAnimationFrame(tunerRAF);
   if (micStream) micStream.getTracks().forEach(t => t.stop());
-  if (audioCtx) audioCtx.close();
+  if (audioCtx)  audioCtx.close();
   micStream = null; audioCtx = null; analyser = null;
-  smoothedFreq = -1;
-  const statusEl = document.getElementById('tuner-status');
-  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'tuner-status'; }
-  updateTunerDisplay(-1);
+  freqBuffer = []; stableCount = 0; lastDirection = null;
+  const s = document.getElementById('tuner-status');
+  if (s) { s.textContent = ''; s.className = 'tuner-status'; }
+  updateTunerDisplay();
 }
 
 // ---- Init ----
 function initTunerUI() {
-  // Build string selector buttons
   const row = document.getElementById('string-selector');
-  if (row) {
-    row.innerHTML = GUITAR_NOTES.map(s => `
-      <button class="str-btn${s.string === 6 ? ' active' : ''}" data-string="${s.string}">
-        <span class="str-btn-label">${s.label}</span>
-        <span class="str-btn-hint">${s.hint}</span>
-      </button>`).join('');
-    row.querySelectorAll('.str-btn').forEach(btn => {
-      btn.addEventListener('click', () => selectString(parseInt(btn.dataset.string)));
-    });
-  }
-  // Set initial target label
+  if (!row) return;
+  row.innerHTML = GUITAR_NOTES.map(s => `
+    <button class="str-btn${s.string === 6 ? ' active' : ''}" data-string="${s.string}">
+      <span class="str-btn-label">${s.label}</span>
+      <span class="str-btn-hint">${s.hint}</span>
+    </button>`).join('');
+  row.querySelectorAll('.str-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectString(parseInt(btn.dataset.string)));
+  });
   selectString(6);
 }
