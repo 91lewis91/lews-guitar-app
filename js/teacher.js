@@ -240,16 +240,16 @@ function renderLearnView(song) {
       try {
         const result = await autoFetchChords(currentSong.title, currentSong.artist);
 
-        if (!result || result.all.length === 0) {
-          autoFetchStatus.textContent = 'Nothing found automatically — try searching manually below.';
+        if (!result || result.known.length === 0) {
+          autoFetchStatus.textContent = 'Not found automatically — add chords manually below.';
           autoFetchStatus.className = 'auto-fetch-status fail';
+          autoFetchBtn.disabled = false;
+          autoFetchBtn.innerHTML = '<span class="af-icon">&#10024;</span> Auto-fetch chords &amp; tabs';
         } else {
-          // Merge new chords with existing ones
           const existingChords = currentSong.chords || [];
           const merged = [...new Set([...existingChords, ...result.known])];
           const changes = { chords: merged };
 
-          // Fill tab editor if it's empty
           const tabEditor = view.querySelector('#tab-editor');
           if (tabEditor && !tabEditor.value.trim() && result.text) {
             tabEditor.value = result.text;
@@ -259,21 +259,27 @@ function renderLearnView(song) {
           updateSong(currentSongId, changes);
           renderChordDiagrams({ ...currentSong, chords: merged });
 
-          const unknownCount = result.all.length - result.known.length;
-          let msg = `Found ${result.known.length} chord${result.known.length !== 1 ? 's' : ''}`;
-          if (unknownCount > 0) msg += ` (${unknownCount} not in diagram library yet)`;
-          autoFetchStatus.textContent = msg;
+          const fromLibrary = result.source === 'library';
+          autoFetchStatus.textContent = fromLibrary
+            ? `Found in song library — ${result.known.length} chords loaded`
+            : `Found ${result.known.length} chord${result.known.length !== 1 ? 's' : ''}`;
           autoFetchStatus.className = 'auto-fetch-status ok';
           autoFetchBtn.innerHTML = '<span class="af-icon">&#10003;</span> Done';
-          return; // leave button disabled — can re-tap to refresh
+
+          // Switch to Tabs view automatically so user can see the lyrics+chords
+          if (result.text && tabEditor) {
+            view.querySelectorAll('.learn-tab-btn').forEach(b => b.classList.remove('active'));
+            view.querySelectorAll('.learn-tab-content').forEach(c => c.classList.add('hidden'));
+            view.querySelector('[data-tab="tabs"]').classList.add('active');
+            view.getElementById && view.querySelector('#learn-tab-tabs').classList.remove('hidden');
+          }
         }
       } catch (err) {
-        autoFetchStatus.textContent = 'Error fetching — check your connection and try again.';
+        autoFetchStatus.textContent = 'Error — check your connection and try again.';
         autoFetchStatus.className = 'auto-fetch-status fail';
+        autoFetchBtn.disabled = false;
+        autoFetchBtn.innerHTML = '<span class="af-icon">&#10024;</span> Auto-fetch chords &amp; tabs';
       }
-
-      autoFetchBtn.disabled = false;
-      autoFetchBtn.innerHTML = '<span class="af-icon">&#10024;</span> Auto-fetch chords &amp; tabs';
     });
   }
 
