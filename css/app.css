@@ -86,186 +86,229 @@ body {
    TUNER
    ============================== */
 #view-tuner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 16px 0;
-  gap: 0;
+  padding: 0 0 24px;
 }
 
-.tuner-title {
+.tuner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px;
+}
+.tuner-header-title {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text);
-  margin-bottom: 12px;
-  align-self: flex-start;
+  color: var(--accent);
 }
-.tuner-title span { color: var(--accent); }
-
-/* Gauge */
-.tuner-gauge-wrapper {
-  position: relative;
-  width: 280px;
-  height: 160px;
-  margin: 8px auto;
-}
-.tuner-gauge-arc {
-  width: 100%;
-  height: 100%;
-}
-
-/* Needle */
-.tuner-needle-container {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 120px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  transform-origin: bottom center;
-}
-#tuner-needle {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 115px solid var(--accent2);
-  transform-origin: bottom center;
-  transition: transform 0.08s ease-out, border-bottom-color 0.15s;
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  margin-left: -4px;
-}
-.tuner-pivot {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  background: var(--surface3);
-  border-radius: 50%;
-  border: 2px solid var(--text-secondary);
-}
-
-/* Cents marks */
-.tuner-marks {
-  position: absolute;
-  bottom: 0; left: 0; right: 0; top: 0;
-  pointer-events: none;
-}
-
-/* Note display */
-.tuner-note-display {
-  text-align: center;
-  margin: 12px 0 8px;
-}
-.tuner-note {
-  font-size: 64px;
-  font-weight: 800;
-  letter-spacing: -2px;
-  line-height: 1;
+.tuner-status {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
-  transition: color 0.15s;
 }
-.tuner-note.in-tune  { color: var(--in-tune); }
-.tuner-note.flat     { color: var(--accent2); }
-.tuner-note.sharp    { color: var(--accent); }
+.tuner-status.active { color: var(--in-tune); }
+.tuner-status.error  { color: var(--danger); }
 
-#tuner-cents {
-  font-size: 16px;
-  color: var(--text-secondary);
-  min-height: 22px;
-  font-weight: 500;
-}
-#tuner-freq {
-  font-size: 13px;
-  color: var(--surface3);
-  margin-top: 2px;
-}
-
-/* String indicators */
-.tuner-strings {
+/* Sections */
+.tuner-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--surface2);
   display: flex;
-  gap: 12px;
-  margin: 16px 0 12px;
+  flex-direction: column;
+  gap: 10px;
 }
-.string-dot {
+.tuner-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* String selector buttons */
+.string-selector {
+  display: flex;
+  gap: 6px;
+}
+.str-btn {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-}
-.string-dot-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  gap: 3px;
+  padding: 10px 4px;
   background: var(--surface2);
   border: 2px solid var(--surface3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
-  transition: all 0.15s;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.12s;
 }
-.string-dot.active .string-dot-circle {
+.str-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg);
 }
-.string-dot-label {
-  font-size: 10px;
-  color: var(--text-secondary);
+.str-btn:active { opacity: 0.75; }
+.str-btn-label {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+.str-btn-hint {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
-/* Tuner button */
-.tuner-btn-row {
-  margin-top: 4px;
+.tuner-target-note {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
+
+/* Start button */
 #tuner-start-btn {
   background: var(--accent);
   color: var(--bg);
   border: none;
-  border-radius: 999px;
-  padding: 14px 40px;
+  border-radius: var(--radius-sm);
+  padding: 14px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.15s, background 0.15s;
+  width: 100%;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
 }
-#tuner-start-btn.active {
-  background: var(--danger);
-  color: white;
-}
+#tuner-start-btn.active { background: var(--danger); color: #fff; }
 #tuner-start-btn:active { opacity: 0.8; }
 
-/* Status */
-.tuner-status {
-  font-size: 13px;
-  color: var(--text-secondary);
+/* Big action word */
+.tuner-action {
+  font-size: 48px;
+  font-weight: 900;
   text-align: center;
-  padding: 8px 16px;
-  min-height: 36px;
+  letter-spacing: -1px;
+  line-height: 1;
+  padding: 8px 0 4px;
+  transition: color 0.1s;
 }
-.tuner-status.error { color: var(--danger); }
-.tuner-status.active { color: var(--in-tune); }
+.tuner-action.idle     { color: var(--text-secondary); font-size: 22px; font-weight: 500; }
+.tuner-action.in-tune  { color: var(--in-tune); }
+.tuner-action.tighten  { color: #ff8c42; }
+.tuner-action.loosen   { color: #74b3ff; }
 
-/* Hint text */
-.tuner-hint {
-  font-size: 13px;
+/* Detected note */
+.tuner-detected-note {
+  font-size: 36px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text);
+  line-height: 1;
+}
+.tuner-cents-val {
+  font-size: 14px;
   color: var(--text-secondary);
   text-align: center;
-  padding: 0 24px 16px;
-  line-height: 1.6;
+  min-height: 20px;
 }
-.tuner-hint strong { color: var(--accent); }
+
+/* Horizontal bar meter */
+.tuner-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.bar-label-left, .bar-label-right {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 36px;
+  flex-shrink: 0;
+}
+.bar-label-right { text-align: right; }
+#tuner-bar-track {
+  flex: 1;
+  height: 28px;
+  background: var(--surface2);
+  border-radius: 14px;
+  position: relative;
+  overflow: visible;
+  border: 1.5px solid var(--surface3);
+  transition: border-color 0.2s;
+}
+#tuner-bar-track.in-tune { border-color: var(--in-tune); }
+#tuner-bar-track.flat    { border-color: #ff8c42; }
+#tuner-bar-track.sharp   { border-color: #74b3ff; }
+
+/* Green centre zone */
+.tuner-bar-centre-zone {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(50% - 12px);
+  width: 24px;
+  background: #2cb67d22;
+  border-radius: 4px;
+}
+/* Centre tick */
+#tuner-bar-track::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px; bottom: 6px;
+  width: 2px;
+  background: var(--surface3);
+  transform: translateX(-50%);
+}
+
+/* Moving dot */
+#tuner-bar-fill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent2);
+  transform: translate(-50%, -50%);
+  transition: left 0.08s ease-out, background 0.15s;
+  box-shadow: 0 0 8px rgba(232, 197, 71, 0.4);
+}
+#tuner-bar-track.in-tune #tuner-bar-fill { background: var(--in-tune); box-shadow: 0 0 12px rgba(44,182,125,0.6); }
+#tuner-bar-track.flat    #tuner-bar-fill { background: #ff8c42; }
+#tuner-bar-track.sharp   #tuner-bar-fill { background: #74b3ff; }
+
+/* Tips box */
+.tuner-tip-box {
+  margin: 14px 16px 0;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.tip-row strong { color: var(--text); }
+.tip-icon {
+  font-size: 18px;
+  line-height: 1.2;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+}
+.tighten-icon { color: #ff8c42; font-weight: 900; }
+.loosen-icon  { color: #74b3ff; font-weight: 900; }
 
 /* ==============================
    SONGS

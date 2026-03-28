@@ -51,6 +51,9 @@ function initTunerControls() {
   }
 }
 
+// app.js no longer calls the old initTunerUI that referenced needle/dots —
+// tuner.js initTunerUI now builds the string selector itself.
+
 // Register service worker
 function initServiceWorker() {
   if ('serviceWorker' in navigator) {

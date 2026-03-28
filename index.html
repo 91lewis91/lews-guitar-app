@@ -15,82 +15,54 @@
 
     <!-- ===== TUNER VIEW ===== -->
     <div id="view-tuner" class="view">
-      <div class="tuner-title">&#9834; <span>Tuner</span></div>
 
-      <!-- Gauge -->
-      <div class="tuner-gauge-wrapper">
-        <svg class="tuner-gauge-arc" viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg">
-          <!-- Background arc -->
-          <path d="M 20 150 A 120 120 0 0 1 260 150" fill="none" stroke="#252438" stroke-width="12" stroke-linecap="round"/>
-          <!-- Coloured zones -->
-          <path d="M 20 150 A 120 120 0 0 1 80 50"  fill="none" stroke="#ff4d4d33" stroke-width="10" stroke-linecap="round"/>
-          <path d="M 200 50 A 120 120 0 0 1 260 150" fill="none" stroke="#ff4d4d33" stroke-width="10" stroke-linecap="round"/>
-          <path d="M 80 50 A 120 120 0 0 1 140 30"   fill="none" stroke="#e8c54733" stroke-width="10" stroke-linecap="round"/>
-          <path d="M 140 30 A 120 120 0 0 1 200 50"  fill="none" stroke="#e8c54733" stroke-width="10" stroke-linecap="round"/>
-          <!-- Centre green zone -->
-          <path d="M 125 31 A 120 120 0 0 1 155 31"  fill="none" stroke="#2cb67d55" stroke-width="12" stroke-linecap="round"/>
-          <!-- Tick marks -->
-          <line x1="20"  y1="150" x2="28"  y2="150" stroke="#3a3856" stroke-width="2"/>
-          <line x1="260" y1="150" x2="252" y2="150" stroke="#3a3856" stroke-width="2"/>
-          <line x1="140" y1="30"  x2="140" y2="38"  stroke="#3a3856" stroke-width="2"/>
-          <line x1="72"  y1="62"  x2="78"  y2="68"  stroke="#3a3856" stroke-width="2"/>
-          <line x1="208" y1="62"  x2="202" y2="68"  stroke="#3a3856" stroke-width="2"/>
-          <!-- Labels -->
-          <text x="10"  y="155" fill="#a7a9be" font-size="10" text-anchor="middle">♭</text>
-          <text x="270" y="155" fill="#a7a9be" font-size="10" text-anchor="middle">♯</text>
-          <text x="140" y="22"  fill="#2cb67d" font-size="10" text-anchor="middle">✓</text>
-        </svg>
-        <!-- Needle -->
-        <div id="tuner-needle"></div>
-        <div class="tuner-pivot"></div>
+      <div class="tuner-header">
+        <span class="tuner-header-title">&#9834; Tuner</span>
+        <span id="tuner-status" class="tuner-status"></span>
       </div>
 
-      <!-- Note display -->
-      <div class="tuner-note-display">
-        <div id="tuner-note" class="tuner-note">—</div>
-        <div id="tuner-cents"></div>
-        <div id="tuner-freq"></div>
+      <!-- Step 1: Pick a string -->
+      <div class="tuner-section">
+        <div class="tuner-section-label">① Pick the string you're tuning</div>
+        <div id="string-selector" class="string-selector"></div>
+        <div id="tuner-target-note" class="tuner-target-note"></div>
       </div>
 
-      <!-- String indicators (low E to high e) -->
-      <div class="tuner-strings">
-        <div class="string-dot" data-string="6">
-          <div class="string-dot-circle">E</div>
-          <div class="string-dot-label">82Hz</div>
-        </div>
-        <div class="string-dot" data-string="5">
-          <div class="string-dot-circle">A</div>
-          <div class="string-dot-label">110Hz</div>
-        </div>
-        <div class="string-dot" data-string="4">
-          <div class="string-dot-circle">D</div>
-          <div class="string-dot-label">147Hz</div>
-        </div>
-        <div class="string-dot" data-string="3">
-          <div class="string-dot-circle">G</div>
-          <div class="string-dot-label">196Hz</div>
-        </div>
-        <div class="string-dot" data-string="2">
-          <div class="string-dot-circle">B</div>
-          <div class="string-dot-label">247Hz</div>
-        </div>
-        <div class="string-dot" data-string="1">
-          <div class="string-dot-circle">e</div>
-          <div class="string-dot-label">330Hz</div>
-        </div>
-      </div>
-
-      <!-- Start button -->
-      <div class="tuner-btn-row">
+      <!-- Step 2: Start & pluck -->
+      <div class="tuner-section">
+        <div class="tuner-section-label">② Start &amp; pluck that string</div>
         <button id="tuner-start-btn">Start Tuner</button>
       </div>
-      <div id="tuner-status" class="tuner-status">Tap the button to start tuning</div>
 
-      <!-- Hint -->
-      <p class="tuner-hint">
-        Pluck a string and tune until the needle centres and the note turns <strong>green</strong>.
-        Standard tuning: <strong>E A D G B e</strong> (thickest to thinnest).
-      </p>
+      <!-- Step 3: Action display -->
+      <div class="tuner-section">
+        <div class="tuner-section-label">③ Follow the instruction</div>
+
+        <!-- Big action word -->
+        <div id="tuner-action" class="tuner-action idle">Pluck the string...</div>
+
+        <!-- Detected note -->
+        <div id="tuner-detected-note" class="tuner-detected-note">—</div>
+        <div id="tuner-cents-val" class="tuner-cents-val"></div>
+
+        <!-- Horizontal bar meter -->
+        <div class="tuner-bar-wrap">
+          <span class="bar-label-left">FLAT</span>
+          <div id="tuner-bar-track" class="tuner-bar-track">
+            <div class="tuner-bar-centre-zone"></div>
+            <div id="tuner-bar-fill" class="tuner-bar-fill"></div>
+          </div>
+          <span class="bar-label-right">SHARP</span>
+        </div>
+      </div>
+
+      <!-- How to tighten/loosen -->
+      <div class="tuner-tip-box">
+        <div class="tip-row"><span class="tip-icon tighten-icon">↑</span><div><strong>Tighten</strong> = turn the peg to increase string tension = raises the pitch</div></div>
+        <div class="tip-row"><span class="tip-icon loosen-icon">↓</span><div><strong>Loosen</strong> = turn the peg to decrease string tension = lowers the pitch</div></div>
+        <div class="tip-row"><span class="tip-icon">💡</span><div>Turn slowly — a tiny movement makes a big difference</div></div>
+      </div>
+
     </div>
 
     <!-- ===== SONGS VIEW ===== -->
